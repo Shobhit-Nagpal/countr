@@ -49,7 +49,7 @@ const ZoomImage = ({ image }) => {
   const handleMouseUp = () => setDragging(false);
 
   const draw = () => {
-    if (canvasRef.current) {
+    if (canvasRef.current && background.width && background.height) {
       const { width, height } = canvasRef.current;
       const context = canvasRef.current.getContext("2d");
 
@@ -79,39 +79,50 @@ const ZoomImage = ({ image }) => {
   useEffect(() => {
     observer.current = new ResizeObserver((entries) => {
       entries.forEach(({ target }) => {
-        const { width, height } = background;
-        // If width of the container is smaller than image, scale image down
-        if (target.clientWidth < width) {
-          // Calculate scale
-          const scale = target.clientWidth / width;
+        if (canvasRef.current) {
+          const { width, height } = background;
+          // If width of the container is smaller than image, scale image down
+          if (target.clientWidth < width) {
+            // Calculate scale
+            const scale = target.clientWidth / width;
 
-          // Redraw image
-          canvasRef.current.width = width * scale;
-          canvasRef.current.height = height * scale;
-          canvasRef.current
-            .getContext("2d")
-            .drawImage(background, 0, 0, width * scale, height * scale);
+            // Redraw image
+            console.log(canvasRef.current);
+            canvasRef.current.width = width * scale;
+            canvasRef.current.height = height * scale;
+            canvasRef.current
+              .getContext("2d")
+              .drawImage(background, 0, 0, width * scale, height * scale);
+          }
         }
       });
     });
-    observer.current.observe(containerRef.current);
+    if (containerRef.current) {
+      observer.current.observe(containerRef.current);
+    }
 
-    return () => observer.current.unobserve(containerRef.current);
+    return () => {
+      if (observer.current && containerRef.current) {
+        observer.current.unobserve(containerRef.current);
+      }
+    };
   }, []);
 
   useEffect(() => {
-    background.src = image;
+    if (image) {
+      background.src = image;
 
-    if (canvasRef.current) {
-      background.onload = () => {
-        // Get the image dimensions
-        const { width, height } = background;
-        canvasRef.current.width = width;
-        canvasRef.current.height = height;
+      if (canvasRef.current) {
+        background.onload = () => {
+          // Get the image dimensions
+          const { width, height } = background;
+          canvasRef.current.width = width;
+          canvasRef.current.height = height;
 
-        // Set image as background
-        canvasRef.current.getContext("2d").drawImage(background, 0, 0);
-      };
+          // Set image as background
+          canvasRef.current.getContext("2d").drawImage(background, 0, 0);
+        };
+      }
     }
   }, [background]);
 

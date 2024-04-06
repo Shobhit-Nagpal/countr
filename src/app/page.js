@@ -1,5 +1,6 @@
 "use client";
 
+import { ButtonLoading } from "@/components/ButtonLoading";
 import Header from "@/components/Header";
 import Hero from "@/components/Hero";
 import ZoomImage from "@/components/ZoomImage";
@@ -11,6 +12,7 @@ export default function Home() {
   const [previewUrl, setPreviewUrl] = useState("");
   const [cellData, setCellData] = useState(null);
   const [cellImage, setCellImage] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleFileChange = (event) => {
     if (event.target.files && event.target.files[0]) {
@@ -25,7 +27,7 @@ export default function Home() {
     }
   };
 
-  const handleButtonClick = async () => {
+  const handleSubmitClick = async () => {
     if (img) {
       console.log("File to process: ", img);
       console.log(typeof img);
@@ -34,6 +36,7 @@ export default function Home() {
       data.append("file", img);
 
       try {
+        setIsLoading(true);
         const response = await fetch("/api/segment", {
           method: "POST",
           body: data,
@@ -44,8 +47,10 @@ export default function Home() {
         setCellData(res.data);
         const cellImg = Buffer.from(res.img).toString("base64");
         setCellImage(cellImg);
+        setIsLoading(false);
       } catch (err) {
         console.error(err);
+        setIsLoading(false);
       }
 
       if (previewUrl) {
@@ -53,6 +58,16 @@ export default function Home() {
       }
     } else {
       console.log("No file selected");
+    }
+  };
+
+  const handleClearClick = () => {
+    if (img && previewUrl) {
+      URL.revokeObjectURL(previewUrl);
+      setPreviewUrl("");
+      setImg(null);
+      setCellData(null);
+      setCellImage("");
     }
   };
   return (
@@ -125,12 +140,29 @@ export default function Home() {
               </p>
             </div>
           ) : null}
-          <Button
-            className="px-8 py-4 text-lg font-bold"
-            onClick={handleButtonClick}
-          >
-            Submit
-          </Button>
+
+          {isLoading ? (
+            <ButtonLoading />
+          ) : (
+            !cellImage && (
+              <Button
+                className="px-8 py-4 text-lg font-bold"
+                onClick={handleSubmitClick}
+              >
+                Submit
+              </Button>
+            )
+          )}
+
+          {previewUrl && (
+            <Button
+              variant="outline"
+              className="px-8 border-2 py-4 text-lg font-bold"
+              onClick={handleClearClick}
+            >
+              Clear
+            </Button>
+          )}
         </div>
       </main>
     </>
